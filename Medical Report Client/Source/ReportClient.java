@@ -7,19 +7,40 @@
 
 import Logger.ReportLogger;
 
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
 /*
 The client application that will submit medical reports to the server.
  */
-public class ReportClient {
-
+public class ReportClient
+{
     private static final ReportLogger Log = ReportLogger.getLogger(ReportClient.class.getName());
 
-    public static void main(String[] args) {
+    private static Socket socket;
 
-        Log.info("Client started.");
+    public static void main(String[] args)
+    {
+        Log.info("Client starting.");
 
+        try
+        {
+            socket = new Socket("localhost", 50505);
+
+            socket.close();
+        }
+        catch (UnknownHostException e)
+        {
+            System.err.println("Don't know about host: localhost ");
+            System.exit(1);
+        }
+        catch (IOException e)
+        {
+            System.err.println("Couldn't get I/O for the connection to: 4444.");
+            System.exit(1);
+        }
 
         Log.info("Client stopping.");
-
     }
 }

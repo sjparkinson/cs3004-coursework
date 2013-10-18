@@ -14,19 +14,21 @@ import java.util.logging.LogRecord;
 /*
 Log formatter for output to the console.
  */
-class ReportLoggerFormatter extends Formatter {
+class ReportLoggerFormatter extends Formatter
+{
+    private String sourceClassName;
 
-    private static String sourceClassName;
-
-    public ReportLoggerFormatter(String name) {
-        sourceClassName = name;
+    public ReportLoggerFormatter(String name)
+    {
+        this.sourceClassName = name;
     }
 
-    public String format(LogRecord record) {
+    public String format(LogRecord record)
+    {
         // Get the date and time that the record was made.
         Date recordDate = new Date(record.getMillis());
 
         // Return a formatted string ready for output.
-        return String.format("[%1$tT.%1$tL] %2$s %3$s: %4$s\n", recordDate, sourceClassName, record.getLevel(), record.getMessage());
+        return String.format("[%1$tT.%1$tL] %2$s %3$s: %4$s\n", recordDate, this.sourceClassName, record.getLevel(), record.getMessage());
     }
 }
