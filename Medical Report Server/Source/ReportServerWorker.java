@@ -27,8 +27,6 @@ public class ReportServerWorker implements Runnable
 
     public void run()
     {
-        Log.info("Starting network connection and new state object.");
-
         Log.log(Level.INFO, "Connected to %s.", socket.getRemoteSocketAddress());
     }
 }

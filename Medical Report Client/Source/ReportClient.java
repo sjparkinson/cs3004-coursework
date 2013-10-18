@@ -26,7 +26,7 @@ public class ReportClient
 
         try
         {
-            socket = new Socket("localhost", 50505);
+            socket = new Socket(ReportConfig.Host, ReportConfig.Port);
 
             socket.close();
         }

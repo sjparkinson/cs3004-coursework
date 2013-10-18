@@ -13,6 +13,7 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 /*
 The report server that will receive and log/store messages.
@@ -25,16 +26,16 @@ public class ReportServer
 
     private static ServerSocket serverSocket = null;
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws IOException
     {
-        start();
+        start(ReportConfig.Port);
     }
 
-    private static void start()
+    private static void start(int port)
     {
         try
         {
-            serverSocket = new ServerSocket(50505);
+            serverSocket = new ServerSocket(port);
         }
         catch (IOException e)
         {
@@ -55,11 +56,15 @@ public class ReportServer
 
         while (listening)
         {
+            Log.info("Ready for new client connection.");
+
             Socket connection;
 
             try
             {
                 connection = serverSocket.accept();
+
+                Log.log(Level.INFO, "Connecting with %s.", connection.getRemoteSocketAddress());
             }
             catch (IOException e)
             {
@@ -69,7 +74,7 @@ public class ReportServer
 
             Runnable worker = new ReportServerWorker(connection);
 
-            Log.info("Creating new worker.");
+            Log.debug("Creating new worker.");
 
             executor.execute(worker);
         }
