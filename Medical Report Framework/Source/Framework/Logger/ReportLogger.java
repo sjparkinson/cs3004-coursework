@@ -1,4 +1,4 @@
-package Logger;
+package Framework.Logger;
 
 /**
  * Created with IntelliJ IDEA.
@@ -6,6 +6,8 @@ package Logger;
  * Date: 18/10/13
  * Time: 14:39
  */
+
+import Framework.ReportConfig;
 
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
@@ -16,71 +18,65 @@ Log class for use in both the server and the client.
  */
 public class ReportLogger
 {
-
-    // The logger instance to use.
-    private static final Logger LOGGER = Logger.getLogger(ReportLogger.class.getName());
-
     // The singleton object to return.
     private static ReportLogger reportLogger;
 
     // Log handlers
     private static final ConsoleHandler consoleHandler = new ConsoleHandler();
 
-    // Returns the logger instance to use.
-    public static ReportLogger getLogger(String name)
-    {
+    // The logger instance to use.
+    private static final Logger LOGGER = Logger.getLogger(ReportLogger.class.getName());
 
+    // Returns the logger instance to use.
+    public static ReportLogger getLogger()
+    {
         if (reportLogger == null)
         {
-
             reportLogger = new ReportLogger();
 
             // Remove the default ConsoleHandler so we can add our own.
             LOGGER.setUseParentHandlers(false);
 
-            LOGGER.setLevel(Level.ALL);
+            LOGGER.setLevel(ReportConfig.LogLevel);
 
-            consoleHandler.setFormatter(new ReportLoggerFormatter(name));
+            consoleHandler.setFormatter(new ReportLoggerFormatter());
 
             LOGGER.addHandler(consoleHandler);
-
         }
 
         return reportLogger;
     }
 
-    public void debug(String message)
+    public void debug(String message, Object... args)
     {
-        log(Level.FINE, message);
+        log(Level.FINE, message, args);
     }
 
-    public void info(String message)
+    public void info(String message, Object... args)
     {
-        log(Level.INFO, message);
+        log(Level.INFO, message, args);
     }
 
-    public void warning(String message)
+    public void warning(String message, Object... args)
     {
-        log(Level.WARNING, message);
+        log(Level.WARNING, message, args);
     }
 
-    public void severe(String message)
+    public void severe(String message, Object... args)
     {
-        log(Level.SEVERE, message);
+        log(Level.SEVERE, message, args);
     }
 
-    public void log(Level level, String format, Object... args)
+    private void log(Level level, String format, Object... args)
     {
         log(level, String.format(format, args));
     }
 
     private static void log(Level level, String message)
     {
-
         if (LOGGER.isLoggable(level))
         {
             LOGGER.log(level, message);
         }
-
     }
 }

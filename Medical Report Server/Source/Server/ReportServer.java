@@ -1,28 +1,27 @@
-/**
+package Server; /**
  * Created with IntelliJ IDEA.
  * User: Sam
  * Date: 18/10/13
  * Time: 14:32
  */
 
-import Logger.ReportLogger;
+import Framework.Logger.ReportLogger;
+import Framework.ReportConfig;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 /*
 The report server that will receive and log/store messages.
  */
 public class ReportServer
 {
-    private static final ReportLogger Log = ReportLogger.getLogger(ReportServer.class.getName());
+    private static final ReportLogger Log = ReportLogger.getLogger();
 
-    private static final ExecutorService executor = Executors.newFixedThreadPool(10);
+    private static final ExecutorService Executor = Executors.newFixedThreadPool(4);
 
     private static ServerSocket serverSocket = null;
 
@@ -39,7 +38,7 @@ public class ReportServer
         }
         catch (IOException e)
         {
-            Log.severe("Failed to connect to socket.");
+            Log.severe("Failed to connect to socket %s.", port);
 
             e.printStackTrace();
             System.exit(-1);
@@ -64,7 +63,7 @@ public class ReportServer
             {
                 connection = serverSocket.accept();
 
-                Log.log(Level.INFO, "Connecting with %s.", connection.getRemoteSocketAddress());
+                Log.debug("Connecting with %s.", connection.getRemoteSocketAddress());
             }
             catch (IOException e)
             {
@@ -76,7 +75,7 @@ public class ReportServer
 
             Log.debug("Creating new worker.");
 
-            executor.execute(worker);
+            Executor.execute(worker);
         }
 
         shutdown();
@@ -86,21 +85,11 @@ public class ReportServer
     {
         Log.info("Server shutting down.");
 
-        executor.shutdown();
+        Executor.shutdown();
 
         try
         {
-            executor.awaitTermination(30, TimeUnit.SECONDS);
-
-            executor.shutdownNow();
-
             serverSocket.close();
-        }
-        catch (InterruptedException e)
-        {
-            Log.severe("Could not await termination.");
-
-            e.printStackTrace();
         }
         catch (IOException e)
         {
