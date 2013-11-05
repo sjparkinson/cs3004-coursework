@@ -7,7 +7,6 @@ package Client; /**
 
 import Framework.Logger.ReportLogger;
 import Framework.ReportConfig;
-import Framework.ReportProtocol;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -21,21 +20,35 @@ public class ReportClient
 {
     private static final ReportLogger Log = ReportLogger.getLogger();
 
-    private static Socket socket;
+    private static Socket socket = null;
 
     public static void main(String[] args)
     {
         Log.info("Client starting.");
 
+        connect();
+
+        try
+        {
+            PrintWriter outputWriter = new PrintWriter(socket.getOutputStream(), true);
+
+            outputWriter.println("CLOSE");
+
+            socket.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        Log.info("Client is stopping.");
+    }
+
+    private static void connect()
+    {
         try
         {
             socket = new Socket(ReportConfig.Host, ReportConfig.Port);
-
-            PrintWriter outputWriter = new PrintWriter(socket.getOutputStream(), true);
-
-            outputWriter.println(ReportProtocol.ReportProtocolState.Close);
-
-            socket.close();
         }
         catch (UnknownHostException e)
         {
@@ -47,7 +60,5 @@ public class ReportClient
             Log.severe("Could not connect to the server at %s:%s.", ReportConfig.Host, ReportConfig.Port);
             System.exit(1);
         }
-
-        Log.info("Client stopping.");
     }
 }

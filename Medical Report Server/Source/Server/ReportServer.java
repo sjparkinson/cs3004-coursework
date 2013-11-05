@@ -55,7 +55,7 @@ public class ReportServer
 
         while (listening)
         {
-            Log.info("Ready for new client connection.");
+            Log.debug("Ready for new client connection.");
 
             Socket connection;
 
@@ -77,8 +77,6 @@ public class ReportServer
 
             Executor.execute(worker);
         }
-
-        shutdown();
     }
 
     private static void shutdown()

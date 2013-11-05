@@ -28,7 +28,7 @@ class ReportServerWorker implements Runnable
 
     public void run()
     {
-        Log.info("Connected to %s.", socket.getRemoteSocketAddress());
+        Log.debug("Connected to %s.", socket.getRemoteSocketAddress());
 
         try
         {
@@ -37,14 +37,14 @@ class ReportServerWorker implements Runnable
             while (scanner.hasNextLine())
             {
                 //process each line in some way
-                String command = scanner.nextLine();
+                String message = scanner.nextLine();
 
-                Log.info("Message received: %s.", command);
-
-                socket.close();
-
-                Log.info("Close connection with %s.", socket.getRemoteSocketAddress());
+                Log.debug("Message received: %s.", message);
             }
+
+            socket.close();
+
+            Log.debug("Closed connection with %s.", socket.getRemoteSocketAddress());
         }
         catch (IOException e)
         {

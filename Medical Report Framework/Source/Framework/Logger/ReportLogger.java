@@ -30,6 +30,7 @@ public class ReportLogger
     // Returns the logger instance to use.
     public static ReportLogger getLogger()
     {
+
         if (reportLogger == null)
         {
             reportLogger = new ReportLogger();
