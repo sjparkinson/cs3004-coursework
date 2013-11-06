@@ -10,6 +10,7 @@ package Framework.Logger;
 import Framework.ReportConfig;
 
 import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,9 +21,6 @@ public class ReportLogger
 {
     // The singleton object to return.
     private static ReportLogger reportLogger;
-
-    // Log handlers
-    private static final ConsoleHandler consoleHandler = new ConsoleHandler();
 
     // The logger instance to use.
     private static final Logger LOGGER = Logger.getLogger(ReportLogger.class.getName());
@@ -39,6 +37,10 @@ public class ReportLogger
             LOGGER.setUseParentHandlers(false);
 
             LOGGER.setLevel(ReportConfig.LogLevel);
+
+            Handler consoleHandler = new ConsoleHandler();
+
+            consoleHandler.setLevel(ReportConfig.LogLevel);
 
             consoleHandler.setFormatter(new ReportLoggerFormatter());
 

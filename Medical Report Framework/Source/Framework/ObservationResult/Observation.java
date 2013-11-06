@@ -1,31 +1,14 @@
 package Framework.ObservationResult;
 
-import com.google.gson.Gson;
+import org.joda.time.DateTime;
 
-import java.util.Date;
 import java.util.UUID;
-
-/**
- * Created with IntelliJ IDEA.
- * User: Sam
- * Date: 05/11/13
- * Time: 15:13
- */
-
-enum ObservationType
-{
-    Weight,
-
-    BloodPressure,
-
-    HeartRate
-}
 
 public class Observation
 {
     public UUID Id;
 
-    public Date ObservationTimestamp;
+    public DateTime TimeStamp;
 
     public ObservationType Type;
 
@@ -33,13 +16,18 @@ public class Observation
 
     public String Units;
 
-    public static Observation fromJson(String json)
+    public Observation()
     {
-        return new Gson().fromJson(json, Observation.class);
+        this(null, null, null);
     }
 
-    public String toJson()
+    public Observation(ObservationType type, String value, String units)
     {
-        return new Gson().toJson(this, Observation.class);
+        Id = UUID.randomUUID();
+        TimeStamp = new DateTime();
+
+        Units = units;
+        Type = type;
+        Value = value;
     }
 }

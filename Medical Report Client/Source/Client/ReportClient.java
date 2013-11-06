@@ -6,7 +6,9 @@ package Client; /**
  */
 
 import Framework.Logger.ReportLogger;
+import Framework.ObservationResult.ObservationResult;
 import Framework.ReportConfig;
+import Framework.ReportProtocol;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -22,43 +24,48 @@ public class ReportClient
 
     private static Socket socket = null;
 
-    public static void main(String[] args)
+    public static void sendObservation(ObservationResult observationResult)
     {
-        Log.info("Client starting.");
-
-        connect();
-
-        try
+        if (connect() == true)
         {
-            PrintWriter outputWriter = new PrintWriter(socket.getOutputStream(), true);
+            try
+            {
+                PrintWriter outputWriter = new PrintWriter(socket.getOutputStream(), true);
 
-            outputWriter.println("CLOSE");
+                outputWriter.println(ReportProtocol.encodeMessage(observationResult));
 
-            socket.close();
+                outputWriter.println(ReportProtocol.Command.Close);
+
+                socket.close();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+
+            Log.info("Disconnected from the server.");
         }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-        }
-
-        Log.info("Client is stopping.");
     }
 
-    private static void connect()
+    private static boolean connect()
     {
+        Log.debug("Connecting to the server.");
+
         try
         {
             socket = new Socket(ReportConfig.Host, ReportConfig.Port);
+
+            return true;
         }
         catch (UnknownHostException e)
         {
             Log.severe("Could not understand the host %s.", ReportConfig.Host);
-            System.exit(1);
         }
         catch (IOException e)
         {
             Log.severe("Could not connect to the server at %s:%s.", ReportConfig.Host, ReportConfig.Port);
-            System.exit(1);
         }
+
+        return false;
     }
 }

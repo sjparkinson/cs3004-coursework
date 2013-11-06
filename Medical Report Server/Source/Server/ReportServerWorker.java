@@ -13,6 +13,9 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.Scanner;
 
+import static Framework.ReportProtocol.Command;
+import static Framework.ReportProtocol.ParseCommand;
+
 class ReportServerWorker implements Runnable
 {
     private static final ReportLogger Log = ReportLogger.getLogger();
@@ -37,11 +40,14 @@ class ReportServerWorker implements Runnable
             while (scanner.hasNextLine())
             {
                 //process each line in some way
-                String message = scanner.nextLine();
+                String clientMessage = scanner.nextLine();
 
-                Log.debug("Message received: %s.", message);
+                Log.debug("Client message received: %s.", clientMessage);
+
+                this.processClientMessage(clientMessage);
             }
 
+            // Connection has ended...
             socket.close();
 
             Log.debug("Closed connection with %s.", socket.getRemoteSocketAddress());
@@ -49,6 +55,24 @@ class ReportServerWorker implements Runnable
         catch (IOException e)
         {
             e.printStackTrace();
+        }
+    }
+
+    private void processClientMessage(String clientMessage) throws IOException
+    {
+        Command command = ParseCommand(clientMessage);
+
+        switch (command)
+        {
+            case Message:
+                Log.info("Message received: %s.", command);
+
+                // try and convert message, if success send ok, else error.
+
+                break;
+            case Close:
+                socket.close();
+                break;
         }
     }
 }

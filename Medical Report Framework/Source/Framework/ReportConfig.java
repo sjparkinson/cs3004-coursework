@@ -15,5 +15,5 @@ public final class ReportConfig
 
     public static final String Host = "localhost";
 
-    public static final Level LogLevel = Level.INFO;
+    public static final Level LogLevel = Level.ALL;
 }

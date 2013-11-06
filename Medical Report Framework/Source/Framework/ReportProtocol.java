@@ -6,8 +6,7 @@ package Framework; /**
  */
 
 import Framework.Logger.ReportLogger;
-import Framework.ObservationResult.Observation;
-import com.google.gson.Gson;
+import Framework.ObservationResult.ObservationResult;
 
 import java.io.InvalidObjectException;
 
@@ -19,11 +18,13 @@ public class ReportProtocol
 {
     private static final ReportLogger Log = ReportLogger.getLogger();
 
-    private static final String Separator = " # ";
+    private static final String Separator = "; ";
 
     // Defines the states that the client and server can be in.
     public enum Command
     {
+        None(""),
+
         Message("MESSAGE"),
 
         Close("CLOSE"),
@@ -42,24 +43,42 @@ public class ReportProtocol
         @Override
         public String toString()
         {
-            return this.command;
+            return this.command + Separator;
+        }
+
+        public static Command fromString(String command)
+        {
+            for (Command cmd : Command.values())
+            {
+                if (cmd.toString() == command)
+                {
+                    return cmd;
+                }
+            }
+
+            return None;
         }
     }
 
-    public static String encodeMessage(Observation observation)
+    public static Command ParseCommand(String command)
     {
-        return String.format("%s%s%s", Command.Message, Separator, observation.toJson());
+        return Command.fromString(command.split(Separator)[0]);
     }
 
-    public static Observation decodeMessage(String message) throws InvalidObjectException
+    public static String encodeMessage(ObservationResult observationResult)
     {
-        String[] splitMessage = message.split(Separator);
+        return String.format("%s%s", Command.Message, observationResult.toJson());
+    }
 
-        if (Command.valueOf(splitMessage[0]) != Command.Message)
+    public static ObservationResult decodeMessage(String message) throws InvalidObjectException
+    {
+        if (ParseCommand(message) != Command.Message)
         {
             throw new InvalidObjectException("Did not receive a Message command.");
         }
 
-        return new Gson().fromJson(splitMessage[1], Observation.class);
+        String json = message.substring(Command.Message.toString().length() + Separator.length());
+
+        return ObservationResult.fromJson(json);
     }
 }

@@ -1,21 +1,8 @@
 package Framework.ObservationResult;
 
-import java.util.Date;
+import org.joda.time.DateTime;
+
 import java.util.UUID;
-
-/**
- * Created with IntelliJ IDEA.
- * User: Sam
- * Date: 05/11/13
- * Time: 15:13
- */
-
-enum Gender
-{
-    Male,
-
-    Female
-}
 
 public class Patient
 {
@@ -23,9 +10,21 @@ public class Patient
 
     public String Name;
 
-    public Date DateOfBirth;
+    public DateTime DateOfBirth;
 
-    public Gender Gender;
+    public PatientGender Gender;
 
-    public Address Address;
+    public Patient()
+    {
+        this(null, null, null);
+    }
+
+    public Patient(String name, DateTime dateOfBirth, PatientGender gender)
+    {
+        Id = UUID.randomUUID();
+
+        Name = name;
+        DateOfBirth = dateOfBirth;
+        Gender = gender;
+    }
 }
