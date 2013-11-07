@@ -9,8 +9,11 @@ import Framework.Logger.ReportLogger;
 import Framework.ObservationResult.ObservationResult;
 import Framework.ReportConfig;
 import Framework.ReportProtocol;
+import org.joda.time.DateTime;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -18,36 +21,67 @@ import java.net.UnknownHostException;
 /*
 The client application that will submit medical reports to the server.
  */
-public class ReportClient
+public class ReportClient implements Runnable
 {
     private static final ReportLogger Log = ReportLogger.getLogger();
 
     private static Socket socket = null;
 
-    public static void sendObservation(ObservationResult observationResult)
+
+    private ClientState _currentState;
+
+    private ObservationResult _observationResult;
+
+    private int _attempts = 0;
+
+    enum ClientState
     {
-        if (connect() == true)
+        Disconnected,
+
+        Connected,
+
+        Transmitting,
+
+        AwaitingResponse,
+
+        Completed
+    }
+
+    public ReportClient(ObservationResult observationResult)
+    {
+        this._observationResult = observationResult;
+
+        this._currentState = ClientState.Disconnected;
+    }
+
+    public void run()
+    {
+        processState();
+    }
+
+    private void processState()
+    {
+        switch (this._currentState)
         {
-            try
-            {
-                PrintWriter outputWriter = new PrintWriter(socket.getOutputStream(), true);
+            case Disconnected:
+                connect();
+                break;
 
-                outputWriter.println(ReportProtocol.encodeMessage(observationResult));
+            case Connected:
+                sendObservation();
+                break;
 
-                outputWriter.println(ReportProtocol.Command.Close);
+            case AwaitingResponse:
+                awaitResponse();
+                break;
 
-                socket.close();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-
-            Log.info("Disconnected from the server.");
+            case Completed:
+                disconnect();
+                break;
         }
     }
 
-    private static boolean connect()
+    private void connect()
     {
         Log.debug("Connecting to the server.");
 
@@ -55,7 +89,9 @@ public class ReportClient
         {
             socket = new Socket(ReportConfig.Host, ReportConfig.Port);
 
-            return true;
+            socket.setSoTimeout(30000);
+
+            this._currentState = ClientState.Connected;
         }
         catch (UnknownHostException e)
         {
@@ -66,6 +102,90 @@ public class ReportClient
             Log.severe("Could not connect to the server at %s:%s.", ReportConfig.Host, ReportConfig.Port);
         }
 
-        return false;
+        processState();
+    }
+
+    private void disconnect()
+    {
+        try
+        {
+            socket.close();
+        }
+        catch (Exception e)
+        {
+            Log.severe("An error occurred: %s.", e.getMessage());
+        }
+    }
+
+    private void sendObservation()
+    {
+        this._currentState = ClientState.Transmitting;
+
+        try
+        {
+            PrintWriter outputWriter = new PrintWriter(socket.getOutputStream(), true);
+
+            outputWriter.println(ReportProtocol.encodeMessage(this._observationResult));
+
+            Log.debug("Sent observation, awaiting reply.");
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+
+        this._currentState = ClientState.AwaitingResponse;
+
+        processState();
+    }
+
+    private void awaitResponse()
+    {
+        DateTime timeout = DateTime.now().plusSeconds(30);
+
+        try
+        {
+            BufferedReader response = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            String inputLine = response.readLine();
+
+            ReportProtocol.Command command = ReportProtocol.ParseCommand(inputLine);
+
+            if (command == ReportProtocol.Command.Ok)
+            {
+                Log.info("Observation sent successfully.");
+            }
+            else if (command == ReportProtocol.Command.Error)
+            {
+                Log.severe("The server returned an error: %s", inputLine.substring(4));
+            }
+
+            this._currentState = ClientState.Completed;
+
+            processState();
+        }
+        catch (Exception e)
+        {
+            Log.severe("An error occurred: %s.", e.getMessage());
+
+            _attempts += 1;
+
+            disconnect();
+
+            if (_attempts < ReportConfig.TransmissionAttempts)
+            {
+                Log.info("Attempting to resend the observation.");
+
+                this._currentState = ClientState.Disconnected;
+            }
+            else
+            {
+                Log.severe("Reached max transmission attempts, observation failed to send successfully.");
+
+                this._currentState = ClientState.Completed;
+            }
+
+            processState();
+        }
     }
 }

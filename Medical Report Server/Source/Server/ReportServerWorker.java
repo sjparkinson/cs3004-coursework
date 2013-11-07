@@ -8,8 +8,11 @@ package Server;
  */
 
 import Framework.Logger.ReportLogger;
+import Framework.ObservationResult.ObservationResult;
+import Framework.ReportProtocol;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
@@ -22,57 +25,146 @@ class ReportServerWorker implements Runnable
 
     private final Socket socket;
 
+    private ServerState _currentState;
+
+    private String _currentMessage;
+
+    private ObservationResult _receivedObservation;
+
+    enum ServerState
+    {
+        Waiting,
+
+        Receiving,
+
+        Replying,
+
+        Disconnected
+    }
+
     public ReportServerWorker(Socket socket)
     {
         this.socket = socket;
 
-        Log.debug("ReportServerWorker constructor called.");
+        this._currentState = ServerState.Waiting;
     }
 
     public void run()
     {
         Log.debug("Connected to %s.", socket.getRemoteSocketAddress());
 
+        processState();
+    }
+
+    private void processState()
+    {
+        Log.debug("Current state: %s.", this._currentState);
+
+        switch (_currentState)
+        {
+            case Waiting:
+                awaitMessage();
+                break;
+
+            case Receiving:
+                processClientMessage();
+                break;
+
+            case Replying:
+                reply();
+                break;
+
+            case Disconnected:
+                disconnect();
+                break;
+        }
+    }
+
+    private void awaitMessage()
+    {
         try
         {
             Scanner scanner = new Scanner(socket.getInputStream());
 
-            while (scanner.hasNextLine())
+            if (scanner.hasNextLine())
             {
                 //process each line in some way
-                String clientMessage = scanner.nextLine();
+                this._currentMessage = scanner.nextLine();
 
-                Log.debug("Client message received: %s.", clientMessage);
+                Log.debug("Client message received: %s.", this._currentMessage);
 
-                this.processClientMessage(clientMessage);
+                this._currentState = ServerState.Receiving;
+
+                processState();
             }
-
-            // Connection has ended...
-            socket.close();
-
-            Log.debug("Closed connection with %s.", socket.getRemoteSocketAddress());
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             e.printStackTrace();
         }
     }
 
-    private void processClientMessage(String clientMessage) throws IOException
+    private void processClientMessage()
     {
-        Command command = ParseCommand(clientMessage);
+        Log.debug("Processing received message.", socket.getRemoteSocketAddress());
+
+        Command command = null;
+
+        try
+        {
+            command = ParseCommand(this._currentMessage);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
 
         switch (command)
         {
             case Message:
                 Log.info("Message received: %s.", command);
-
-                // try and convert message, if success send ok, else error.
-
+                this._currentState = ServerState.Replying;
                 break;
+
             case Close:
-                socket.close();
+                this._currentState = ServerState.Disconnected;
                 break;
+        }
+
+        processState();
+    }
+
+    private void reply()
+    {
+        Log.debug("Sending reply to to %s.", socket.getRemoteSocketAddress());
+
+        try
+        {
+            PrintWriter outputWriter = new PrintWriter(socket.getOutputStream(), true);
+
+            outputWriter.println(ReportProtocol.Command.Ok);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        this._currentState = ServerState.Waiting;
+
+        processState();
+    }
+
+    private void disconnect()
+    {
+        Log.debug("Disconnecting from %s.", socket.getRemoteSocketAddress());
+
+        try
+        {
+            socket.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
         }
     }
 }

@@ -16,4 +16,6 @@ public final class ReportConfig
     public static final String Host = "localhost";
 
     public static final Level LogLevel = Level.ALL;
+
+    public static final int TransmissionAttempts = 3;
 }

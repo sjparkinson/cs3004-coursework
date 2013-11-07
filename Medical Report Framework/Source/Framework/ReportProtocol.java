@@ -8,8 +8,6 @@ package Framework; /**
 import Framework.Logger.ReportLogger;
 import Framework.ObservationResult.ObservationResult;
 
-import java.io.InvalidObjectException;
-
 /*
 Defines the protocol used by both the client and server
 in the Report application.
@@ -18,20 +16,20 @@ public class ReportProtocol
 {
     private static final ReportLogger Log = ReportLogger.getLogger();
 
-    private static final String Separator = "; ";
+    private static final String Separator = " ";
 
     // Defines the states that the client and server can be in.
     public enum Command
     {
         None(""),
 
-        Message("MESSAGE"),
+        Message("MSG"),
 
-        Close("CLOSE"),
+        Close("BYE"),
 
-        Error("ERROR"),
+        Error("ERR"),
 
-        Ok("OK");
+        Ok("THX");
 
         private Command(String command)
         {
@@ -45,24 +43,23 @@ public class ReportProtocol
         {
             return this.command + Separator;
         }
-
-        public static Command fromString(String command)
-        {
-            for (Command cmd : Command.values())
-            {
-                if (cmd.toString() == command)
-                {
-                    return cmd;
-                }
-            }
-
-            return None;
-        }
     }
 
-    public static Command ParseCommand(String command)
+    public static Command ParseCommand(String message) throws Exception
     {
-        return Command.fromString(command.split(Separator)[0]);
+        String command = message.substring(0, 3);
+
+        Log.debug("Received command: %s", command);
+
+        for (Command cmd : Command.values())
+        {
+            if (cmd.command.equals(command))
+            {
+                return cmd;
+            }
+        }
+
+        return Command.None;
     }
 
     public static String encodeMessage(ObservationResult observationResult)
@@ -70,11 +67,18 @@ public class ReportProtocol
         return String.format("%s%s", Command.Message, observationResult.toJson());
     }
 
-    public static ObservationResult decodeMessage(String message) throws InvalidObjectException
+    public static ObservationResult decodeMessage(String message) throws Exception
     {
-        if (ParseCommand(message) != Command.Message)
+        try
         {
-            throw new InvalidObjectException("Did not receive a Message command.");
+            if (ParseCommand(message) != Command.Message)
+            {
+                throw new Exception("Did not receive a Message command.");
+            }
+        }
+        catch (Exception e)
+        {
+            Log.severe("Received an invalid command: %s.", message);
         }
 
         String json = message.substring(Command.Message.toString().length() + Separator.length());

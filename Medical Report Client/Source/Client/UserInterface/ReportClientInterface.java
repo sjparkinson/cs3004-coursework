@@ -22,13 +22,13 @@ public class ReportClientInterface
 {
     private JPanel MainPanel;
     private JTextField textName;
-    private JComboBox comboDobDay;
+    private JComboBox<Integer> comboDobDay;
     private JComboBox comboDobMonth;
-    private JComboBox comboDobYear;
+    private JComboBox<Integer> comboDobYear;
     private JLabel DateOfBirthLabel;
     private JRadioButton radioGenderMale;
     private JRadioButton radioGenderFemale;
-    private JComboBox comboObservationType;
+    private JComboBox<ObservationType> comboObservationType;
     private JTextField textObservationValue;
     private JTextField textObservationUnits;
     private JButton sendButton;
@@ -65,8 +65,6 @@ public class ReportClientInterface
             @Override
             public void actionPerformed(ActionEvent e)
             {
-                Log.debug("Send button pressed.");
-
                 final ObservationResult message = new ObservationResult();
 
                 message.Patient = new Patient(
@@ -79,16 +77,9 @@ public class ReportClientInterface
                         textObservationValue.getText(),
                         textObservationUnits.getText());
 
-                Runnable communicationWorker = new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        ReportClient.sendObservation(message);
-                    }
-                };
+                ReportClient client = new ReportClient(message);
 
-                Thread communicationThread = new Thread(communicationWorker);
+                Thread communicationThread = new Thread(client);
 
                 communicationThread.start();
             }
@@ -115,7 +106,7 @@ public class ReportClientInterface
                 );
             }
 
-            private int getIntValue(JComboBox comboBox)
+            private int getIntValue(JComboBox<Integer> comboBox)
             {
                 return Integer.parseInt(comboBox.getSelectedItem().toString());
             }
@@ -156,7 +147,7 @@ public class ReportClientInterface
 
     private void setObservationTypeItems()
     {
-        Vector comboObservationTypeItems = new Vector();
+        Vector<ObservationType> comboObservationTypeItems = new Vector<ObservationType>();
 
         for (ObservationType type : ObservationType.values())
         {
@@ -166,14 +157,14 @@ public class ReportClientInterface
             }
         }
 
-        final DefaultComboBoxModel comboTypeModel = new DefaultComboBoxModel(comboObservationTypeItems);
+        final DefaultComboBoxModel<ObservationType> comboTypeModel = new DefaultComboBoxModel<ObservationType>(comboObservationTypeItems);
 
         comboObservationType.setModel(comboTypeModel);
     }
 
     private void setDobYearItems()
     {
-        Vector comboDobYearItems = new Vector();
+        Vector<Integer> comboDobYearItems = new Vector<Integer>();
 
         // set years
         for (int i = 1898; i <= new DateTime().getYear(); i++)
@@ -181,7 +172,7 @@ public class ReportClientInterface
             comboDobYearItems.add(i);
         }
 
-        final DefaultComboBoxModel comboDobModel = new DefaultComboBoxModel(comboDobYearItems);
+        final DefaultComboBoxModel<Integer> comboDobModel = new DefaultComboBoxModel<Integer>(comboDobYearItems);
 
         comboDobYear.setModel(comboDobModel);
     }
